@@ -1,9 +1,10 @@
-// use discord_flows::http::HttpBuilder;
+use discord_flows::http::HttpBuilder;
 use dotenv::dotenv;
 use github_flows::{
     listen_to_event, octocrab::models::events::payload::IssuesEventAction, EventPayload,
     GithubLogin::Default,
 };
+use serde_json::json;
 use slack_flows::send_message_to_channel;
 use std::env;
 
@@ -26,18 +27,14 @@ pub async fn run() {
 }
 
 async fn handler(payload: EventPayload) {
-    // let client = HttpBuilder::new("DEFAULT_BOT").build();
-
-    // let me = client.get_current_user().await;
-
-    // let discord_server = env::var("discord_server").unwrap_or("Vivian Hu's server".to_string());
-    let discord_channel = env::var("discord_channel").unwrap_or("general".to_string());
+    let client = HttpBuilder::new("DEFAULT_BOT").build();
+    let discord_server = env::var("discord_server").unwrap_or("Vivian Hu's server".to_string());
 
     let slack_workspace = env::var("slack_workspace").unwrap_or("secondstate".to_string());
     let slack_channel = env::var("slack_channel").unwrap_or("github-status".to_string());
 
     if let EventPayload::IssuesEvent(e) = payload {
-        if e.action == IssuesEventAction::Closed || e.action == IssuesEventAction::Edited {
+        if e.action == IssuesEventAction::Closed {
             return;
         }
         let issue = e.issue;
@@ -46,19 +43,29 @@ async fn handler(payload: EventPayload) {
         let user = issue.user.login;
         let labels = issue.labels;
 
-        for label in labels {
+        'outer: for label in labels {
             match label.name.as_str() {
                 "good first issue" => {
                     let body =
                         format!("{user} submitted good first issue: {issue_title}\n{issue_url}");
-                    // _ = client
-                    //     .send_message(
-                    //         &discord_channel,
-                    //         &serde_json::json!({
-                    //             "content": body,
-                    //         }),
-                    //     )
-                    //     .await;
+                    match env::var("discord_channel_id") {
+                        Ok(val) => {
+                            if val.len() == 18 {
+                                let channel_id = val.parse::<u64>().unwrap();
+                                _ = client
+                                    .send_message(
+                                        channel_id,
+                                        &serde_json::json!({
+                                            "content": body,
+                                        }),
+                                    )
+                                    .await;
+                                continue 'outer;
+                            }
+                        }
+                        Err(_e) => {}
+                    }
+                    send_message_to_channel(&slack_workspace, &slack_channel, "you've failed to set a discord_channel_id or set it incorrectly on flows server, so bot failed to noitify you on a good first issue on discord, you're advised to correct this as appropriate".to_string());
                 }
                 "bug" => {
                     let body = format!("{user} submitted bug issue: {issue_title}\n{issue_url}");
