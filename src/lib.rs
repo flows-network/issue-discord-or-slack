@@ -1,10 +1,10 @@
-use discord_flows::{get_client, model::Message};
+// use discord_flows::http::HttpBuilder;
 use dotenv::dotenv;
 use github_flows::{
     listen_to_event, octocrab::models::events::payload::IssuesEventAction, EventPayload,
     GithubLogin::Default,
 };
-use slack_flows::{create_text_message_in_channel, SlackLogin::SlackDefault};
+use slack_flows::send_message_to_channel;
 use std::env;
 
 #[no_mangle]
@@ -26,15 +26,17 @@ pub async fn run() {
 }
 
 async fn handler(payload: EventPayload) {
-    let discord_token = env::var("discord_token").expect("Expected a bot token.");
+    // let client = HttpBuilder::new("DEFAULT_BOT").build();
 
-    let discord_server = env::var("discord_server").unwrap_or("Vivian Hu's server".to_string());
+    // let me = client.get_current_user().await;
+
+    // let discord_server = env::var("discord_server").unwrap_or("Vivian Hu's server".to_string());
     let discord_channel = env::var("discord_channel").unwrap_or("general".to_string());
 
     let slack_workspace = env::var("slack_workspace").unwrap_or("secondstate".to_string());
     let slack_channel = env::var("slack_channel").unwrap_or("github-status".to_string());
 
-    if let Some(EventPayload::IssuesEvent(e)) = payload {
+    if let EventPayload::IssuesEvent(e) = payload {
         if e.action == IssuesEventAction::Closed || e.action == IssuesEventAction::Edited {
             return;
         }
@@ -45,15 +47,13 @@ async fn handler(payload: EventPayload) {
         let labels = issue.labels;
 
         for label in labels {
-            match label.name {
+            match label.name.as_str() {
                 "good first issue" => {
-                    let body = format!(
-                        "good first issue: {issue_title}\n{comment_content}\n{comment_url}"
-                    );
-                    create_text_message_in_channel(&discord_server, &discord_channel, body, None);
+                    let body =
+                        format!("{user} submitted good first issue: {issue_title}\n{issue_url}");
                     // _ = client
                     //     .send_message(
-                    //         msg.channel_id.into(),
+                    //         &discord_channel,
                     //         &serde_json::json!({
                     //             "content": body,
                     //         }),
@@ -61,9 +61,7 @@ async fn handler(payload: EventPayload) {
                     //     .await;
                 }
                 "bug" => {
-                    let   body = format!(
-                            "A bug issue has been submitted: {issue_title}\n{comment_content}\n{comment_url}"
-                        );
+                    let body = format!("{user} submitted bug issue: {issue_title}\n{issue_url}");
                     send_message_to_channel(&slack_workspace, &slack_channel, body);
                 }
                 _ => {}

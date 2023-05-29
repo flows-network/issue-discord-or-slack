@@ -8,8 +8,11 @@ path = "src/lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-github-flows = "0.5.1"
 tokio_wasi = { version = "1.25.1", features = ["macros", "rt"] }
-discord-flows = "0.2.1"
+# discord-flows = "0.3.1"
 dotenv = "0.15.0"
 slack-flows = "0.2.6"
+
+
+[dependencies.github-flows]
+octocrab_wasi = "0.18.3"

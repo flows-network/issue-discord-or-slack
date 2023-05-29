@@ -1,2 +1,1 @@
-# Nofity user about "Good First Issue" in discord
-trigger
+# Send good first issue to discord and send bug issue to Slack
