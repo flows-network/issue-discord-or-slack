@@ -29,7 +29,6 @@ pub async fn run() {
 async fn handler(payload: EventPayload) {
     let client = HttpBuilder::new("DEFAULT_BOT").build();
 
-    let discord_server = env::var("discord_server").unwrap_or("Vivian Hu's server".to_string());
     let slack_workspace = env::var("slack_workspace").unwrap_or("secondstate".to_string());
     let slack_channel = env::var("slack_channel").unwrap_or("github-status".to_string());
 
@@ -41,45 +40,44 @@ async fn handler(payload: EventPayload) {
         let issue_title = issue.title;
         let issue_url = issue.html_url;
         let user = issue.user.login;
-        let labels = issue.labels;
+        let labels_str = issue
+            .labels
+            .into_iter()
+            .map(|lab| lab.name)
+            .collect::<Vec<String>>()
+            .join(",");
 
-        for label in labels {
-            match label.name.as_str() {
-                "good first issue" => {
-                    let body =
-                        format!("{user} submitted good first issue: {issue_title}\n{issue_url}");
-                    // follow this to get discord_channel_id, a 19-digit number like 1091003237827608650
-                    // Open Discord and go to the server where the channel is located.
-                    // Make sure you have the necessary permissions to view channel details.
-                    // Find the channel in the server's channel list on the left-hand side.
-                    // Right-click on the channel name and select "Copy ID" from the context menu.
-                    match env::var("discord_channel_id") {
-                        Ok(val) => {
-                            if val.len() == 19 {
-                                let channel_id = val.parse::<u64>().unwrap();
-                                _ = client
-                                    .send_message(
-                                        channel_id,
-                                        &serde_json::json!({
-                                            "content": body,
-                                        }),
-                                    )
-                                    .await;
-                                return ;
-                            }
+        match (labels_str.contains("good first issue"), labels_str.contains("bug")) {
+            (true, _) => {
+                let body = format!("{user} submitted good first issue: {issue_title}\n{issue_url}");
+                // follow this to get discord_channel_id, a 19-digit number like 1091003237827608650
+                // Open Discord and go to the server where the channel is located.
+                // Make sure you have the necessary permissions to view channel details.
+                // Find the channel in the server's channel list on the left-hand side.
+                // Right-click on the channel name and select "Copy ID" from the context menu.
+                match env::var("discord_channel_id") {
+                    Ok(val) => {
+                        if val.len() == 19 {
+                            let channel_id = val.parse::<u64>().unwrap();
+                            _ = client
+                                .send_message(
+                                    channel_id,
+                                    &serde_json::json!({
+                                        "content": body,
+                                    }),
+                                )
+                                .await;
                         }
-                        Err(_e) => {}
                     }
-                    send_message_to_channel(&slack_workspace, &slack_channel, "you've failed to set a discord_channel_id or set it incorrectly on flows server, so bot failed to noitify you on a good first issue on discord, you're advised to correct this as appropriate".to_string());
-                    return;
+                    Err(_e) => {}
                 }
-                "bug" => {
-                    let body = format!("{user} submitted bug issue: {issue_title}\n{issue_url}");
-                    send_message_to_channel(&slack_workspace, &slack_channel, body);
-                    return ;
-                }
-                _ => {}
+                send_message_to_channel(&slack_workspace, &slack_channel, "you've failed to set a discord_channel_id or set it incorrectly on flows server, so bot failed to noitify you on a good first issue on discord, you're advised to correct this as appropriate".to_string());
             }
+            (_, true) => {
+                let body = format!("{user} submitted bug issue: {issue_title}\n{issue_url}");
+                send_message_to_channel(&slack_workspace, &slack_channel, body);
+            }
+            _ => {}
         }
     }
 }
