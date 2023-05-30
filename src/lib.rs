@@ -43,7 +43,7 @@ async fn handler(payload: EventPayload) {
         let user = issue.user.login;
         let labels = issue.labels;
 
-        'outer: for label in labels {
+        for label in labels {
             match label.name.as_str() {
                 "good first issue" => {
                     let body =
@@ -65,17 +65,18 @@ async fn handler(payload: EventPayload) {
                                         }),
                                     )
                                     .await;
-                                continue 'outer;
+                                return ;
                             }
                         }
                         Err(_e) => {}
                     }
                     send_message_to_channel(&slack_workspace, &slack_channel, "you've failed to set a discord_channel_id or set it incorrectly on flows server, so bot failed to noitify you on a good first issue on discord, you're advised to correct this as appropriate".to_string());
+                    return;
                 }
                 "bug" => {
                     let body = format!("{user} submitted bug issue: {issue_title}\n{issue_url}");
                     send_message_to_channel(&slack_workspace, &slack_channel, body);
-                    continue 'outer;
+                    return ;
                 }
                 _ => {}
             }
