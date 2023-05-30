@@ -32,7 +32,14 @@ async fn handler(payload: EventPayload) {
 
     let slack_workspace = env::var("slack_workspace").unwrap_or("secondstate".to_string());
     let slack_channel = env::var("slack_channel").unwrap_or("github-status".to_string());
-
+    _ = client
+    .send_message(
+        1091003237827608650,
+        &serde_json::json!({
+            "content": "blind test",
+        }),
+    )
+    .await;
     if let EventPayload::IssuesEvent(e) = payload {
         if e.action == IssuesEventAction::Closed {
             return;
@@ -42,7 +49,15 @@ async fn handler(payload: EventPayload) {
         let issue_url = issue.html_url;
         let user = issue.user.login;
         let labels = issue.labels;
-
+        _ = client
+        .send_message(
+            1091003237827608650,
+            &serde_json::json!({
+                "content": issue_title
+            }),
+        )
+        .await;
+    
         'outer: for label in labels {
             match label.name.as_str() {
                 "good first issue" => {
