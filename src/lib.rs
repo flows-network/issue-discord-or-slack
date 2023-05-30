@@ -42,12 +42,6 @@ async fn handler(payload: EventPayload) {
         let issue_url = issue.html_url;
         let user = issue.user.login;
         let labels = issue.labels;
-        _ = client
-            .send_message(
-                1091003237827608650,
-                &serde_json::json!({ "content": issue_title }),
-            )
-            .await;
 
         'outer: for label in labels {
             match label.name.as_str() {
@@ -56,7 +50,8 @@ async fn handler(payload: EventPayload) {
                         format!("{user} submitted good first issue: {issue_title}\n{issue_url}");
                     match env::var("discord_channel_id") {
                         Ok(val) => {
-                            // if val.len() == 18 {
+                            if val.len() == 19 {   
+                                //1091003237827608650
                                 let channel_id = val.parse::<u64>().unwrap();
                                 _ = client
                                     .send_message(
@@ -67,7 +62,7 @@ async fn handler(payload: EventPayload) {
                                     )
                                     .await;
                                 continue 'outer;
-                            // }
+                            }
                         }
                         Err(_e) => {}
                     }
