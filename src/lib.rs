@@ -75,7 +75,7 @@ async fn handler(payload: EventPayload) {
                         }
                     }
                     Err(_e) => {
-                        send_message_to_channel(&slack_workspace, &slack_channel, "You've probably forgot to set a discord_channel_id on flows server, so bot failed to notify you on a good first issue on discord, you're advised to correct this as appropriate".to_string());
+                        send_message_to_channel(&slack_workspace, &slack_channel, "You've probably forgot to set a discord_channel_id on flows server, so the bot failed to notify you on a good first issue on discord, please go to flows network to modify.".to_string());
                     }
                 }
             }
