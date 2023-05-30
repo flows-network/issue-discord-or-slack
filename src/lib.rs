@@ -28,8 +28,8 @@ pub async fn run() {
 
 async fn handler(payload: EventPayload) {
     let client = HttpBuilder::new("DEFAULT_BOT").build();
-    let discord_server = env::var("discord_server").unwrap_or("Vivian Hu's server".to_string());
 
+    let discord_server = env::var("discord_server").unwrap_or("Vivian Hu's server".to_string());
     let slack_workspace = env::var("slack_workspace").unwrap_or("secondstate".to_string());
     let slack_channel = env::var("slack_channel").unwrap_or("github-status".to_string());
 
@@ -48,10 +48,14 @@ async fn handler(payload: EventPayload) {
                 "good first issue" => {
                     let body =
                         format!("{user} submitted good first issue: {issue_title}\n{issue_url}");
+                    // follow this to get discord_channel_id, a 19-digit number like 1091003237827608650
+                    // Open Discord and go to the server where the channel is located.
+                    // Make sure you have the necessary permissions to view channel details.
+                    // Find the channel in the server's channel list on the left-hand side.
+                    // Right-click on the channel name and select "Copy ID" from the context menu.
                     match env::var("discord_channel_id") {
                         Ok(val) => {
-                            if val.len() == 19 {   
-                                //1091003237827608650
+                            if val.len() == 19 {
                                 let channel_id = val.parse::<u64>().unwrap();
                                 _ = client
                                     .send_message(
@@ -71,6 +75,7 @@ async fn handler(payload: EventPayload) {
                 "bug" => {
                     let body = format!("{user} submitted bug issue: {issue_title}\n{issue_url}");
                     send_message_to_channel(&slack_workspace, &slack_channel, body);
+                    continue 'outer;
                 }
                 _ => {}
             }
