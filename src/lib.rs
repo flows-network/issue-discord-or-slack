@@ -4,7 +4,7 @@ use github_flows::{
     listen_to_event, octocrab::models::events::payload::IssuesEventAction, EventPayload,
     GithubLogin::Default,
 };
-use serde_json::json;
+use serde_json;
 use slack_flows::send_message_to_channel;
 use std::env;
 
@@ -47,7 +47,10 @@ async fn handler(payload: EventPayload) {
             .collect::<Vec<String>>()
             .join(",");
 
-        match (labels_str.contains("good first issue"), labels_str.contains("bug")) {
+        match (
+            labels_str.contains("good first issue"),
+            labels_str.contains("bug"),
+        ) {
             (true, _) => {
                 let body = format!("{user} submitted good first issue: {issue_title}\n{issue_url}");
                 // follow this to get discord_channel_id, a 19-digit number like 1091003237827608650
@@ -67,12 +70,16 @@ async fn handler(payload: EventPayload) {
                                     }),
                                 )
                                 .await;
+                        } else {
+                            send_message_to_channel(&slack_workspace, &slack_channel, format!("Please check if the discord_channel_id: {val} is incorrect, if true, please go to flows network to modify."));
                         }
                     }
-                    Err(_e) => {}
+                    Err(_e) => {
+                        send_message_to_channel(&slack_workspace, &slack_channel, "You've probably forgot to set a discord_channel_id on flows server, so bot failed to notify you on a good first issue on discord, you're advised to correct this as appropriate".to_string());
+                    }
                 }
-                send_message_to_channel(&slack_workspace, &slack_channel, "you've failed to set a discord_channel_id or set it incorrectly on flows server, so bot failed to noitify you on a good first issue on discord, you're advised to correct this as appropriate".to_string());
             }
+
             (_, true) => {
                 let body = format!("{user} submitted bug issue: {issue_title}\n{issue_url}");
                 send_message_to_channel(&slack_workspace, &slack_channel, body);
